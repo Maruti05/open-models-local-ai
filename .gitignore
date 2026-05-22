@@ -1,0 +1,88 @@
+# Flutter/Dart
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub/
+.pub-cache/
+.buildlog/
+*.iml
+*.ipr
+*.iws
+*.lock
+.packages
+pubspec.lock
+/build/
+/coverage/
+
+# Android
+android/.gradle/
+android/app/build/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/build/
+android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+key.properties
+
+# iOS
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/App.framework/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Runner/GeneratedPluginRegistrant.*
+*.xcworkspace
+xcuserdata/
+
+# macOS
+macos/Pods/
+macos/.symlinks/
+macos/Flutter/Generated.xcconfig
+macos/Flutter/ephemeral/
+macos/Runner/GeneratedPluginRegistrant.*
+
+# Linux
+linux/flutter/ephemeral/
+linux/flutter/generated_plugin_registrant.*
+
+# Windows
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrant.*
+
+# Web
+web/firebase-messaging-sw.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Miscellaneous
+*.class
+*.pyc
+*.log
+*.bak
+*.orig
