@@ -242,6 +242,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
   }
 
+  void stopGeneration() {
+    _cancelInference();
+    state = state.copyWith(
+      isGenerating: false,
+      streamingMessage: '',
+    );
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }

@@ -19,6 +19,8 @@ class MarkdownMessageWidget extends StatelessWidget {
     return MarkdownWidget(
       data: content,
       selectable: selectable,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       config: _buildConfig(isDark),
     );
   }
