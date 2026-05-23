@@ -122,6 +122,9 @@ class HybridModelManager {
 
   Future<void> unloadModel() async {
     if (_activeLoader != null && _activeLoader!.isLoaded) {
+      try {
+        await _activeLoader!.stopGeneration();
+      } catch (_) {}
       await _activeLoader!.unloadModel();
     }
     _activeLoader = null;
@@ -129,9 +132,15 @@ class HybridModelManager {
   }
 
   void dispose() {
-    _ggufLoader.dispose();
-    _tfliteLoader.dispose();
-    _onnxLoader.dispose();
+    try {
+      _ggufLoader.dispose();
+    } catch (_) {}
+    try {
+      _tfliteLoader.dispose();
+    } catch (_) {}
+    try {
+      _onnxLoader.dispose();
+    } catch (_) {}
     _activeLoader = null;
     _activeModelId = null;
   }

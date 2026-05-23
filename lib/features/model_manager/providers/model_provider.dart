@@ -50,14 +50,14 @@ class ModelState {
   final List<String> downloadedModelIds;
   final Map<String, ModelDownloadState> downloads;
   final String? loadedModelId;
-  final bool isModelLoading;
+  final String? loadingModelId;
   final String error;
 
   ModelState({
     this.downloadedModelIds = const [],
     this.downloads = const {},
     this.loadedModelId,
-    this.isModelLoading = false,
+    this.loadingModelId,
     this.error = '',
   });
 
@@ -65,14 +65,15 @@ class ModelState {
     List<String>? downloadedModelIds,
     Map<String, ModelDownloadState>? downloads,
     String? loadedModelId,
-    bool? isModelLoading,
+    String? loadingModelId,
+    bool clearLoadingModelId = false,
     String? error,
   }) {
     return ModelState(
       downloadedModelIds: downloadedModelIds ?? this.downloadedModelIds,
       downloads: downloads ?? this.downloads,
       loadedModelId: loadedModelId ?? this.loadedModelId,
-      isModelLoading: isModelLoading ?? this.isModelLoading,
+      loadingModelId: clearLoadingModelId ? null : (loadingModelId ?? this.loadingModelId),
       error: error ?? this.error,
     );
   }
@@ -222,7 +223,7 @@ class ModelNotifier extends StateNotifier<ModelState> {
     int? threads,
     double? availableRamGb,
   }) async {
-    state = state.copyWith(isModelLoading: true, error: '');
+    state = state.copyWith(loadingModelId: modelId, error: '');
 
     if (availableRamGb != null) {
       final catalogItem = ApiEndpoints.localModelsCatalog.firstWhere(
@@ -233,7 +234,7 @@ class ModelNotifier extends StateNotifier<ModelState> {
         final minRam = (catalogItem['minRamRequired'] as num?)?.toDouble() ?? 0;
         if (!HardwareChecker.canRunModel(availableRamGb, minRam)) {
           state = state.copyWith(
-            isModelLoading: false,
+            clearLoadingModelId: true,
             error: HardwareChecker.ramShortfallMessage(availableRamGb, minRam),
           );
           return false;
@@ -251,43 +252,48 @@ class ModelNotifier extends StateNotifier<ModelState> {
           'contextSize': contextSize,
         },
       );
-      if (success) {
-        state = state.copyWith(
-          isModelLoading: false,
-          loadedModelId: modelId,
-        );
-        return true;
-      } else {
-        state = state.copyWith(
-          isModelLoading: false,
-          error: 'Failed to initialize model in RAM.',
-        );
-        return false;
+      if (state.loadingModelId == modelId) {
+        if (success) {
+          state = state.copyWith(
+            clearLoadingModelId: true,
+            loadedModelId: modelId,
+          );
+        } else {
+          state = state.copyWith(
+            clearLoadingModelId: true,
+            error: 'Failed to initialize model in RAM.',
+          );
+        }
       }
+      return success;
     } catch (e) {
-      final errorMsg = e.toString();
-      if (errorMsg.contains('corrupt') ||
-          errorMsg.contains('re-download') ||
-          errorMsg.contains('not a valid')) {
-        final updatedList = List<String>.from(state.downloadedModelIds)..remove(modelId);
-        _prefs?.setStringList('downloaded_model_ids', updatedList);
-        state = state.copyWith(
-          isModelLoading: false,
-          error: errorMsg,
-          downloadedModelIds: updatedList,
-        );
-      } else {
-        state = state.copyWith(
-          isModelLoading: false,
-          error: errorMsg,
-        );
+      if (state.loadingModelId == modelId) {
+        final errorMsg = e.toString();
+        if (errorMsg.contains('corrupt') ||
+            errorMsg.contains('re-download') ||
+            errorMsg.contains('not a valid')) {
+          final updatedList = List<String>.from(state.downloadedModelIds)..remove(modelId);
+          _prefs?.setStringList('downloaded_model_ids', updatedList);
+          state = state.copyWith(
+            clearLoadingModelId: true,
+            error: errorMsg,
+            downloadedModelIds: updatedList,
+          );
+        } else {
+          state = state.copyWith(
+            clearLoadingModelId: true,
+            error: errorMsg,
+          );
+        }
       }
       return false;
     }
   }
 
   Future<void> unloadModel() async {
-    await HybridModelManager.instance.unloadModel();
+    try {
+      await HybridModelManager.instance.unloadModel();
+    } catch (_) {}
     state = state.copyWith(loadedModelId: null);
   }
 

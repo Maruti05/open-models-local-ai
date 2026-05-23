@@ -22,10 +22,13 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
   Set<int> _selectedTiers = {};
   String _sizeFilter = 'All';
   String _statusFilter = 'All';
+  Set<String> _selectedInputTypes = {};
+  String _contextFilter = 'All';
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   static const _sizeOptions = ['All', '<300MB', '300MB-1GB', '1-2GB', '>2GB'];
   static const _statusOptions = ['All', 'Downloaded', 'Not Downloaded'];
+  static const _contextOptions = ['All', '<4K', '4K-8K', '8K-32K', '>32K'];
 
   @override
   void initState() {
@@ -92,6 +95,21 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
         final downloaded = modelState.downloadedModelIds.contains(id);
         if (_statusFilter == 'Downloaded' && !downloaded) return false;
         if (_statusFilter == 'Not Downloaded' && downloaded) return false;
+      }
+
+      if (_selectedInputTypes.isNotEmpty) {
+        final inputTypes = (m['inputTypes'] as List<dynamic>?)?.cast<String>() ?? ['text'];
+        if (!_selectedInputTypes.any((t) => inputTypes.contains(t.toLowerCase()))) return false;
+      }
+
+      if (_contextFilter != 'All') {
+        final ctx = m['contextWindow'] as int? ?? 2048;
+        switch (_contextFilter) {
+          case '<4K': if (ctx >= 4000) return false;
+          case '4K-8K': if (ctx < 4000 || ctx >= 8000) return false;
+          case '8K-32K': if (ctx < 8000 || ctx >= 32000) return false;
+          case '>32K': if (ctx < 32000) return false;
+        }
       }
       return true;
     }).toList();
@@ -177,6 +195,10 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
                     _buildChipFilter(_sizeFilter, _sizeOptions, (v) => setState(() => _sizeFilter = v), isDark),
                     const SizedBox(width: 8),
                     _buildChipFilter(_statusFilter, _statusOptions, (v) => setState(() => _statusFilter = v), isDark),
+                    const SizedBox(width: 8),
+                    _buildChipFilter(_contextFilter, _contextOptions, (v) => setState(() => _contextFilter = v), isDark),
+                    const SizedBox(width: 8),
+                    _buildInputTypeFilter(isDark),
                     if (_hasActiveFilters)
                       Padding(
                         padding: const EdgeInsets.only(left: 4),
@@ -285,7 +307,7 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
                       downloadInfo: modelState.downloads[model['id'] as String],
                       isLoaded: modelState.loadedModelId == model['id'] as String,
                       isTierMismatched: model['tier'] < diagnostics.modelTier,
-                      globalLoading: modelState.isModelLoading,
+                      loadingModelId: modelState.loadingModelId,
                       isDark: isDark,
                     );
                   },
@@ -299,13 +321,19 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
     );
   }
 
-  bool get _hasActiveFilters => _selectedTiers.isNotEmpty || _sizeFilter != 'All' || _statusFilter != 'All';
+  bool get _hasActiveFilters => _selectedTiers.isNotEmpty ||
+      _sizeFilter != 'All' ||
+      _statusFilter != 'All' ||
+      _selectedInputTypes.isNotEmpty ||
+      _contextFilter != 'All';
 
   void _resetFilters() {
     setState(() {
       _selectedTiers = {};
       _sizeFilter = 'All';
       _statusFilter = 'All';
+      _selectedInputTypes = {};
+      _contextFilter = 'All';
       _searchController.clear();
       _searchQuery = '';
     });
@@ -379,6 +407,57 @@ class _ModelManagerScreenState extends ConsumerState<ModelManagerScreen> {
           isDense: true,
           icon: Icon(Icons.expand_more_rounded, size: 16,
               color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputTypeFilter(bool isDark) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _inputTypeChip('Text', Icons.text_fields_rounded, isDark),
+        const SizedBox(width: 4),
+        _inputTypeChip('Image', Icons.image_rounded, isDark),
+        const SizedBox(width: 4),
+        _inputTypeChip('Audio', Icons.audiotrack_rounded, isDark),
+        const SizedBox(width: 4),
+        _inputTypeChip('Video', Icons.videocam_rounded, isDark),
+      ],
+    );
+  }
+
+  Widget _inputTypeChip(String label, IconData icon, bool isDark) {
+    final selected = _selectedInputTypes.contains(label);
+    final color = AppColors.vibrantIndigo;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (selected) {
+            _selectedInputTypes.remove(label);
+          } else {
+            _selectedInputTypes.add(label);
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? color : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: selected ? Colors.white : color),
+            const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : color)),
+          ],
         ),
       ),
     );

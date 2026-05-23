@@ -26,7 +26,9 @@ class AiMessageWidget extends StatelessWidget {
     if (content.isEmpty) return const SizedBox.shrink();
 
     if (isStreaming) {
-      final safeContent = LLMOutputParserService.sanitizeStreamingContent(content);
+      final safeContent = LLMOutputParserService.removeUnsupportedTags(
+        LLMOutputParserService.sanitizeStreamingContent(content),
+      );
       if (safeContent.isEmpty && content.isNotEmpty) {
         return _buildStreamingOverflow();
       }
@@ -102,7 +104,9 @@ class AiMessageWidget extends StatelessWidget {
   }
 
   Widget _buildContentWithCodeBlocks(String content) {
-    final codeBlocks = LLMOutputParserService.extractCodeBlocks(content);
+    final cleaned =
+        LLMOutputParserService.removeUnsupportedTags(content).trim();
+    final codeBlocks = LLMOutputParserService.extractCodeBlocks(cleaned);
 
     if (codeBlocks.isEmpty) {
       return MarkdownMessageWidget(content: content);

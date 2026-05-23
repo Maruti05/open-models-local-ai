@@ -19,7 +19,7 @@ class ModelCard extends StatelessWidget {
   final ModelDownloadState? downloadInfo;
   final bool isLoaded;
   final bool isTierMismatched;
-  final bool globalLoading;
+  final String? loadingModelId;
   final bool isDark;
 
   const ModelCard({
@@ -31,7 +31,7 @@ class ModelCard extends StatelessWidget {
     this.downloadInfo,
     required this.isLoaded,
     required this.isTierMismatched,
-    required this.globalLoading,
+    required this.loadingModelId,
     required this.isDark,
   });
 
@@ -45,7 +45,9 @@ class ModelCard extends StatelessWidget {
     final desc = model['description'] as String;
     final dl = downloadInfo;
     final canRun = HardwareChecker.canRunModel(availableRamGb, minRam);
-
+    final contextWindow = model['contextWindow'] as int? ?? 2048;
+    final maxOutputTokens = model['maxOutputTokens'] as int? ?? 1024;
+    final inputTypes = (model['inputTypes'] as List<dynamic>?)?.cast<String>() ?? ['text'];
     Color tierColor = AppColors.neonCyan;
     if (model['tier'] == 2) tierColor = AppColors.vibrantIndigo;
     if (model['tier'] == 1) tierColor = Colors.purpleAccent;
@@ -92,7 +94,20 @@ class ModelCard extends StatelessWidget {
               MetaIconText(icon: Icons.memory_rounded, text: 'Min. ${minRam.toStringAsFixed(0)}GB RAM'),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              MetaIconText(icon: Icons.text_snippet_rounded, text: '${_formatContext(contextWindow)} ctx'),
+              const SizedBox(width: 20),
+              MetaIconText(icon: Icons.output_rounded, text: '${_formatTokens(maxOutputTokens)} out'),
+              const SizedBox(width: 20),
+              ...inputTypes.map((t) => Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: _inputTypeIcon(t),
+              )),
+            ],
+          ),
+          const SizedBox(height: 10),
           Text(desc, style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
           const SizedBox(height: 20),
           if (isTierMismatched && !isDownloaded) ...[
@@ -122,7 +137,7 @@ class ModelCard extends StatelessWidget {
               if (isDownloaded) ...[
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
-                  onPressed: globalLoading ? null : () => ref.read(modelProvider.notifier).deleteModel(modelId),
+                  onPressed: loadingModelId != null ? null : () => ref.read(modelProvider.notifier).deleteModel(modelId),
                 ),
                 const SizedBox(width: 8),
                 if (isLoaded)
@@ -137,7 +152,7 @@ class ModelCard extends StatelessWidget {
                   )
                 else
                   ElevatedButton.icon(
-                    onPressed: globalLoading || !canRun ? null : () {
+                    onPressed: loadingModelId != null || !canRun ? null : () {
                       final settings = ref.read(settingsProvider);
                       final diag = ref.read(diagnosticsProvider);
                       final optimalThreads = HardwareChecker.optimalThreadCount(diag.cores);
@@ -148,7 +163,7 @@ class ModelCard extends StatelessWidget {
                         availableRamGb: diag.availableRamGb,
                       );
                     },
-                    icon: globalLoading
+                    icon: loadingModelId == modelId
                         ? SizedBox(
                             width: 14,
                             height: 14,
@@ -188,5 +203,44 @@ class ModelCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatContext(int tokens) {
+    if (tokens >= 1000) {
+      return '${(tokens / 1000).toStringAsFixed(tokens >= 1000 ? 0 : 1)}K';
+    }
+    return tokens.toString();
+  }
+
+  String _formatTokens(int tokens) {
+    if (tokens >= 1000) {
+      return '${(tokens / 1000).toStringAsFixed(0)}K';
+    }
+    return tokens.toString();
+  }
+
+  Widget _inputTypeIcon(String type) {
+    switch (type) {
+      case 'image':
+        return Tooltip(
+          message: 'Accepts images',
+          child: Icon(Icons.image_rounded, size: 16, color: AppColors.vibrantIndigo),
+        );
+      case 'audio':
+        return Tooltip(
+          message: 'Accepts audio',
+          child: Icon(Icons.audiotrack_rounded, size: 16, color: AppColors.vibrantIndigo),
+        );
+      case 'video':
+        return Tooltip(
+          message: 'Accepts video',
+          child: Icon(Icons.videocam_rounded, size: 16, color: AppColors.vibrantIndigo),
+        );
+      default:
+        return Tooltip(
+          message: 'Text only',
+          child: Icon(Icons.text_fields_rounded, size: 16, color: AppColors.neonCyan),
+        );
+    }
   }
 }

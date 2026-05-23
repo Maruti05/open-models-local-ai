@@ -42,6 +42,29 @@ class LLMOutputParserService {
     dotAll: true,
     caseSensitive: false,
   );
+
+  static final RegExp _promptBracketTokens = RegExp(
+    r'\[/?('
+    r'SYS|INST|ASST|USER|AVAILABLE_TOOLS|TOOLS|CHAT|CONTENT|THINKING|'
+    r'REASONING|OBSERVATION|SYSTEM|ASSISTANT|TURN|MESSAGE|HISTORY|'
+    r'PROMPT|CONTEXT|EXAMPLES|FEWSHOT|PREFIX|SUFFIX|FORMAT|OUTPUT|'
+    r'INPUT|QUERY|RESPONSE|ANSWER|QUESTION|INTENT|ACTION|OBS|'
+    r'TOOL_CALL|FUNCTION_CALL|CODE|TEXT|IMAGE|AUDIO|'
+    r'DEEP_THINK|REASON|THOUGHT|REFINEMENT|CRITIQUE|'
+    r'PLAN|STEPS|GOAL|TASK|ROLE|PERSONA|INSTRUCTION)'
+    r'\]',
+    caseSensitive: false,
+  );
+
+  static final RegExp _specialLlmTokens = RegExp(
+    r'<\|?(im_start|im_end|s|\/s|endoftext|endofprompt|'
+    r'start_header_id|end_header_id|eot|eom|reserved|'
+    r'pad|mask|sep|cls|unk|bos|eos|'
+    r'human|assistant|system|user|bot|'
+    r'python|java|javascript|typescript|dart|go|rust|cpp|csharp)\|?>'
+    r'|\|\s*>\s*$',
+    caseSensitive: false,
+  );
   static final RegExp _codeBlock = RegExp(
     r'```(\w*)\n(.*?)```',
     dotAll: true,
@@ -258,6 +281,8 @@ class LLMOutputParserService {
   static String removeUnsupportedTags(String content) {
     String result = content;
     result = result.replaceAll(_allSpecialTags, '');
+    result = result.replaceAll(_promptBracketTokens, '');
+    result = result.replaceAll(_specialLlmTokens, '');
     result = result.replaceAllMapped(_anyXmlTag, (match) {
       final fullTag = match.group(0)!;
       final tagName = match.group(1)?.toLowerCase() ?? '';
@@ -356,7 +381,15 @@ class LLMOutputParserService {
         openTags.add(tagName);
       }
     }
-    return openTags.isNotEmpty;
+    if (openTags.isNotEmpty) return true;
+
+    final partialBracket = RegExp(r'\[/?\w+$');
+    if (partialBracket.hasMatch(content)) return true;
+
+    final partialSpecialToken = RegExp(r'<\|?\w+[^|>]*$');
+    if (partialSpecialToken.hasMatch(content)) return true;
+
+    return false;
   }
 
   static String sanitizeStreamingContent(String content) {
@@ -369,6 +402,8 @@ class LLMOutputParserService {
     result = result.replaceAll(RegExp(r'<tool[^>]*$', dotAll: true), '');
     result = result.replaceAll(RegExp(r'<function_call[^>]*$', dotAll: true), '');
     result = result.replaceAll(RegExp(r'<function[^>]*$', dotAll: true), '');
+    result = result.replaceAll(RegExp(r'\[/?\w+\s*$', dotAll: true), '');
+    result = result.replaceAll(RegExp(r'<\|?\w+[^|]*$', dotAll: true), '');
     return result;
   }
 }

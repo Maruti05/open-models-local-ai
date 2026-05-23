@@ -9,11 +9,12 @@
 - CollapsibleWidget pattern: ThinkingWidget/ReasoningWidget/ToolCallWidget → 10-line wrappers
 - StubModelLoader base class eliminated TFLite/ONNX stub duplication (~120→10 lines each)
 - Refactored ShellLayout, SettingsScreen, legal screens, model_manager_screen, chat_screen, dashboard_screen
-- Fixed dashboard_screen.dart parser error (if-else in collection literal)
-- Dashboard redesign: health score ring, 4 distinct stat cards (2x2 grid), acceleration block, tier card, benchmark with metric tiles
-- **SettingsScreen redesign**: ParameterCurve CustomPainter charts (temp distribution curve, top-P threshold, top-K bar chart, max tokens wave), preset chips (Precise/Balanced/Creative), icon-backed parameter cards, modern search/cards
-- **ShellLayout redesign**: Gradient nav rail with active indicator dots, colored active backgrounds per tab, neon glow circle icons, matching bottom nav
-- **ModelManagerScreen redesign**: Tier/status summary bar, tier color chips, clean search, compact dropdown filters, modern empty state
+- Dashboard redesign: health score ring, 4 stat cards (2x2 grid), acceleration block, tier card, benchmark
+- SettingsScreen redesign: ParameterCurve charts, preset chips, icon-backed cards
+- ShellLayout redesign: gradient nav rail, colored active tabs, matching bottom nav
+- ModelManagerScreen redesign: filter scroll fix, tier/status bar
+- ChatScreen: animated ThinkingBubble, stop/terminate generation button
+- **Play Store prep**: strings.xml, proguard-rules.pro, network_security_config.xml, updated manifest (allowBackup, cleartext traffic blocked), updated build.gradle.kts (release signing template, R8 minification, ABI splits, bundle config, packaging excludes), version bump 1.0.0+2
 - Final `dart analyze lib/` → 0 issues
 
 ## Next

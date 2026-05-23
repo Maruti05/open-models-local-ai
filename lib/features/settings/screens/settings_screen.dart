@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/styled_card.dart';
@@ -397,6 +399,12 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
               SizedBox(height: 16.h),
+              _actionRow(context, Icons.star_rounded, 'Rate the App', 'Help us improve with a rating',
+                  AppColors.warning, () => _rateApp(context), isDark),
+              Divider(height: 24.h, color: (isDark ? AppColors.darkBorder : AppColors.lightBorder).withValues(alpha: 0.5)),
+              _actionRow(context, Icons.share_rounded, 'Share App', 'Tell others about OpenModels',
+                  AppColors.vibrantIndigo, () => _shareApp(context), isDark),
+              Divider(height: 24.h, color: (isDark ? AppColors.darkBorder : AppColors.lightBorder).withValues(alpha: 0.5)),
               _legalRow(context, Icons.info_outline_rounded, 'About & Legal', 'Version $version+$buildNumber', const LegalScreen(), isDark),
               Divider(height: 24.h, color: (isDark ? AppColors.darkBorder : AppColors.lightBorder).withValues(alpha: 0.5)),
               _legalRow(context, Icons.privacy_tip_rounded, 'Privacy Policy', 'How your data is handled', const PrivacyPolicyScreen(), isDark),
@@ -439,5 +447,84 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _actionRow(BuildContext context, IconData icon, String title, String subtitle, Color color, VoidCallback onTap, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4.h),
+          child: Row(
+            children: [
+              Container(
+                width: 36.r, height: 36.r,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(icon, color: color, size: 18.r),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
+                    Text(subtitle, style: TextStyle(fontSize: 11.sp,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary, size: 20.r),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _rateApp(BuildContext context) async {
+    try {
+      final uri = Uri.parse('market://details?id=com.vedica.labs.ind.app.chat.openmodels');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        final fallback = Uri.parse('https://play.google.com/store/apps/details?id=com.vedica.labs.ind.app.chat.openmodels');
+        if (await canLaunchUrl(fallback)) {
+          await launchUrl(fallback, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open Play Store: $e'),
+              behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
+  Future<void> _shareApp(BuildContext context) async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      await Share.share(
+        'Check out OpenModels v${packageInfo.version} — run open-source LLMs entirely offline on your device!\n\n'
+        'https://play.google.com/store/apps/details?id=com.vedica.labs.ind.app.chat.openmodels',
+        subject: 'OpenModels — Offline AI Chat',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Share failed: $e'),
+              behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
   }
 }

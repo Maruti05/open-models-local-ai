@@ -24,19 +24,27 @@ class GGUFModelLoader implements ModelLoader {
     'smollm_135m_q2': 'chatml',
     'smollm_135m_iq3': 'chatml',
     'smollm_135m_q4': 'chatml',
+    'tinymistral_248m_q4': 'mistral',
+    'mobilellm_350m_q4': 'llama2',
     'smollm_360m_q2': 'chatml',
     'smollm_360m_q3': 'chatml',
     'smollm_360m_q4': 'chatml',
-    'tinyllama_1_1b_q2': 'llama2',
     'qwen_0_5b_q2': 'chatml',
-    'qwen_0_5b_q4': 'chatml',
+    'qwen2_5_0_5b_q2': 'chatml',
+    'tinyllama_1_1b_q2': 'llama2',
     'phi_1_5_q2': 'phi',
+    'qwen_0_5b_q4': 'chatml',
+    'llama_3_2_1b_q2': 'llama2',
+    'qwen2_5_1_5b_q2': 'chatml',
+    'dolphin_3_1b_q2': 'chatml',
     'gemma_2_2b_q2': 'gemma',
+    'gemma_2_2b_mlabonne_q2': 'gemma',
     'phi_2_q2': 'phi',
     'gemma_2_2b_q4': 'gemma',
     'llama_3_3b_q4': 'llama2',
     'phi_3_mini_q4': 'phi',
     'mistral_7b_q4': 'llama2',
+    'smolvlm2_500m_q8': 'phi',
   };
 
   @override
@@ -148,6 +156,7 @@ class GGUFModelLoader implements ModelLoader {
   Future<void> unloadModel() async {
     if (_controller != null) {
       try {
+        await stopGeneration();
         await _controller!.dispose();
       } catch (_) {}
       _controller = null;
@@ -157,7 +166,9 @@ class GGUFModelLoader implements ModelLoader {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    try {
+      _controller?.dispose();
+    } catch (_) {}
     _controller = null;
     _currentModelId = null;
   }
